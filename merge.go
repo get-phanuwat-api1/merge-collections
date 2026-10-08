@@ -2,84 +2,50 @@
 // without using any sort function.
 package merge
 
-import (
-	"errors"
-	"fmt"
-)
-
 // Merge returns every element of the three collections in ascending order.
 //
-// Preconditions (as given by the specification):
-//   - collection1 is sorted from max to min (descending)
-//   - collection2 and collection3 are sorted from min (0) to max (ascending)
-//
-// It is a three-way merge: collection1 is read from its end (its smallest element)
-// and the other two from their start, always taking the smallest head.
-// Time O(n), extra space O(n) for the result only. Inputs are not modified.
+//	collection1: sorted from max to min   e.g. [9 7 5 3]
+//	collection2: sorted from min to max   e.g. [0 2 4 8]
+//	collection3: sorted from min to max   e.g. [1 6 10]
+//	result:                               [0 1 2 3 4 5 6 7 8 9 10]
 func Merge(collection1, collection2, collection3 []int) []int {
-	result := make([]int, 0, len(collection1)+len(collection2)+len(collection3))
+	// Step 1: collection1 is descending, so reverse it to make it ascending like the others.
+	ascending1 := reverse(collection1)
 
-	i := len(collection1) - 1 // collection1 is descending: walk backwards
-	j, k := 0, 0              // collection2 / collection3 are ascending: walk forwards
+	// Step 2: merge two sorted collections at a time.
+	merged := mergeTwo(ascending1, collection2)
+	return mergeTwo(merged, collection3)
+}
 
-	for i >= 0 || j < len(collection2) || k < len(collection3) {
-		const (
-			fromC1 = iota + 1
-			fromC2
-			fromC3
-		)
-		source, smallest := 0, 0
-
-		if i >= 0 {
-			source, smallest = fromC1, collection1[i]
-		}
-		if j < len(collection2) && (source == 0 || collection2[j] < smallest) {
-			source, smallest = fromC2, collection2[j]
-		}
-		if k < len(collection3) && (source == 0 || collection3[k] < smallest) {
-			source, smallest = fromC3, collection3[k]
-		}
-
-		result = append(result, smallest)
-		switch source {
-		case fromC1:
-			i--
-		case fromC2:
-			j++
-		case fromC3:
-			k++
-		}
+// reverse returns a new slice with the elements of s in reverse order.
+func reverse(s []int) []int {
+	result := make([]int, 0, len(s))
+	for i := len(s) - 1; i >= 0; i-- {
+		result = append(result, s[i])
 	}
 	return result
 }
 
-// ErrInvalidInput is wrapped by Validate when a collection breaks the preconditions.
-var ErrInvalidInput = errors.New("invalid input")
+// mergeTwo merges two ascending slices into one ascending slice.
+//
+// Look at the first remaining number of each slice, take the smaller one,
+// and repeat. When one slice runs out, append the rest of the other.
+func mergeTwo(a, b []int) []int {
+	result := make([]int, 0, len(a)+len(b))
+	i, j := 0, 0
 
-// Validate checks the preconditions of Merge. Merge itself trusts its input (to stay O(n)
-// with no extra checks); call Validate first when the input comes from outside, e.g. the CLI.
-func Validate(collection1, collection2, collection3 []int) error {
-	for i := 1; i < len(collection1); i++ {
-		if collection1[i] > collection1[i-1] {
-			return fmt.Errorf("%w: collection_1 must be sorted from max to min, but %d comes after %d",
-				ErrInvalidInput, collection1[i], collection1[i-1])
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] {
+			result = append(result, a[i])
+			i++
+		} else {
+			result = append(result, b[j])
+			j++
 		}
 	}
-	ascending := []struct {
-		name string
-		c    []int
-	}{{"collection_2", collection2}, {"collection_3", collection3}}
-	for _, a := range ascending {
-		name, c := a.name, a.c
-		for i, v := range c {
-			if v < 0 {
-				return fmt.Errorf("%w: %s must start from min 0, but contains %d", ErrInvalidInput, name, v)
-			}
-			if i > 0 && v < c[i-1] {
-				return fmt.Errorf("%w: %s must be sorted from min to max, but %d comes after %d",
-					ErrInvalidInput, name, v, c[i-1])
-			}
-		}
-	}
-	return nil
+
+	// One slice is finished; whatever is left in the other is already sorted.
+	result = append(result, a[i:]...)
+	result = append(result, b[j:]...)
+	return result
 }

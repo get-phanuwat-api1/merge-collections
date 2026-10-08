@@ -81,25 +81,39 @@ Or with `make`:
 
 ## How it works
 
-This is a **three-way merge** in a single pass:
+The problem is split into two small steps:
+
+**Step 1: reverse `collection_1`.** It is the only descending collection, so reversing it makes it ascending like the other two.
 
 ```
-collection_1 = [9, 7, 5, 3]   ← read from the END (smallest first):  3 → 5 → 7 → 9
-collection_2 = [0, 2, 4, 8]   ← read from the START:                 0 → 2 → 4 → 8
-collection_3 = [1, 6, 10]     ← read from the START:                 1 → 6 → 10
+[9, 7, 5, 3]  →  [3, 5, 7, 9]
+```
 
-each step: compare the three current heads, append the smallest, advance that cursor
+**Step 2: merge two sorted collections at a time,** using one helper `mergeTwo` twice.
+
+```
+mergeTwo([3, 5, 7, 9], [0, 2, 4, 8])        → [0, 2, 3, 4, 5, 7, 8, 9]
+mergeTwo([0, 2, 3, 4, 5, 7, 8, 9], [1, 6, 10]) → [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+`mergeTwo` looks at the first remaining number of each slice, takes the smaller one, and repeats. When one slice runs out, the rest of the other slice is appended as-is, since it is already sorted.
+
+```go
+func Merge(collection1, collection2, collection3 []int) []int {
+	ascending1 := reverse(collection1)
+	merged := mergeTwo(ascending1, collection2)
+	return mergeTwo(merged, collection3)
+}
 ```
 
 | | |
 |---|---|
-| Time | **O(n)**, where n is the total number of elements; each element is visited once |
-| Extra space | O(n) for the result only (one allocation) |
+| Time | **O(n)**, where n is the total number of elements; no sorting, just walking through each slice |
 | Inputs | never modified; the result is a new slice |
 | Empty or nil inputs | return `[]`, never `nil` |
 | Duplicates | kept |
 
-`Merge` trusts its preconditions so that it stays a single O(n) pass. Call `Validate` first when the input comes from outside, as the CLI does.
+`Merge` trusts its preconditions. Call `Validate` first when the input comes from outside, as the CLI does.
 
 ## Tests
 
@@ -120,7 +134,8 @@ Coverage of the `merge` package is 100%.
 
 ```
 merge-collections/
-├── merge.go              # Merge + Validate
+├── merge.go              # Merge (reverse + mergeTwo)
+├── validate.go           # Validate (input preconditions)
 ├── merge_test.go         # unit tests + benchmark + "no sort" guard
 ├── merge_fuzz_test.go    # fuzz test
 ├── example_test.go       # runnable example
