@@ -43,9 +43,6 @@ func run(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if err := merge.Validate(collection1, collection2, collection3); err != nil {
-		return err
-	}
 
 	_, err = fmt.Fprintln(out, merge.Merge(collection1, collection2, collection3))
 	return err

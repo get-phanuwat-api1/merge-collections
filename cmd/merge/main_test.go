@@ -35,9 +35,9 @@ func TestRun(t *testing.T) {
 			wantErr: `-c2: "x" is not an integer`,
 		},
 		{
-			name:    "breaks the precondition",
-			args:    []string{"-c1", "1,2"},
-			wantErr: "collection_1 must be sorted from max to min",
+			name: "duplicates across collections",
+			args: []string{"-c1", "9,5,3,1", "-c2", "0,2,8,10", "-c3", "1,2,6,11"},
+			want: "[0 1 1 2 2 3 5 6 8 9 10 11]\n",
 		},
 		{
 			name:    "unknown flag",

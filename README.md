@@ -11,7 +11,7 @@ The function returns all elements sorted in **ascending** order, given that:
 - `collection_1` is already sorted from **max to min**
 - `collection_2` and `collection_3` are already sorted from **min (0) to max**
 
-**No sort function is used.** The repository enforces this with `TestNoSortFunctionUsed`, which fails if any non-test file imports `sort` or `slices`.
+**No sort function is used.** The repository enforces this with `TestNoSortFunctionUsed`, which fails if any non-test file imports the `sort` package or calls `slices.Sort`, `slices.SortFunc`, or `slices.SortStableFunc`. The input is already sorted, so the implementation only merges it.
 
 ---
 
@@ -41,12 +41,7 @@ go run ./cmd/merge -c1 9,7,5,3 -c2 0,2,4,8 -c3 1,6,10
 | `-c2` | collection_2, comma separated, sorted from min (0) to max |
 | `-c3` | collection_3, comma separated, sorted from min (0) to max |
 
-Input that breaks these rules is rejected with a clear message:
-
-```bash
-go run ./cmd/merge -c1 1,2
-# error: invalid input: collection_1 must be sorted from max to min, but 2 comes after 1
-```
+The input must follow the rules in the table above, which are the "given" of the specification. The function relies on them instead of sorting.
 
 To use it as a library:
 
@@ -80,39 +75,32 @@ Or with `make`:
 
 ## How it works
 
-The problem is split into two small steps:
-
-**Step 1: reverse `collection_1`.** It is the only descending collection, so reversing it makes it ascending like the other two.
-
-```
-[9, 7, 5, 3]  →  [3, 5, 7, 9]
-```
-
-**Step 2: merge two sorted collections at a time,** using one helper `mergeTwo` twice.
-
-```
-mergeTwo([3, 5, 7, 9], [0, 2, 4, 8])        → [0, 2, 3, 4, 5, 7, 8, 9]
-mergeTwo([0, 2, 3, 4, 5, 7, 8, 9], [1, 6, 10]) → [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-```
-
-`mergeTwo` looks at the first remaining number of each slice, takes the smaller one, and repeats. When one slice runs out, the rest of the other slice is appended as-is, since it is already sorted.
+Every collection is **already sorted**, so nothing needs to be sorted again. The function only merges:
 
 ```go
 func Merge(collection1, collection2, collection3 []int) []int {
-	ascending1 := reverse(collection1)
-	merged := mergeTwo(ascending1, collection2)
-	return mergeTwo(merged, collection3)
+	minToMax := func(x, y int) bool { return x < y }
+
+	ascending1 := reverse(collection1)                       // 1. max→min becomes min→max
+	merged := mergeSorted(ascending1, collection2, minToMax) // 2. merge two sorted collections
+	return mergeSorted(merged, collection3, minToMax)        // 3. merge in the third one
 }
 ```
 
+```
+reverse([9, 7, 5, 3])                               → [3, 5, 7, 9]
+mergeSorted([3, 5, 7, 9], [0, 2, 4, 8])             → [0, 2, 3, 4, 5, 7, 8, 9]
+mergeSorted([0, 2, 3, 4, 5, 7, 8, 9], [1, 6, 10])   → [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+`mergeSorted(left, right, less)` works like merging two sorted piles of cards. It looks at the top card of each pile, takes the one that comes first according to `less`, and repeats. When one pile runs out, the rest of the other pile is already in order. `less` decides the direction: `x < y` for min to max, `x > y` for max to min.
+
 | | |
 |---|---|
-| Time | **O(n)**, where n is the total number of elements; no sorting, just walking through each slice |
+| Time | **O(n)**, where n is the total number of elements; each element is visited a constant number of times, with no sorting |
 | Inputs | never modified; the result is a new slice |
-| Empty or nil inputs | return `[]`, never `nil` |
+| Empty input | returns an empty slice |
 | Duplicates | kept |
-
-`Merge` trusts its preconditions. Call `Validate` first when the input comes from outside, as the CLI does.
 
 ## Tests
 
@@ -121,7 +109,7 @@ func Merge(collection1, collection2, collection3 []int) []int {
 | `TestMerge` | table-driven cases: interleaved values, empty or nil inputs, a single collection only, duplicates, all-equal values, non-overlapping ranges, different lengths, negatives in collection_1 |
 | `TestMerge_DoesNotModifyInputs` / `ResultDoesNotAliasInputs` | inputs are untouched, and the result is a new slice |
 | `TestMerge_LargeInput` | 300,000 elements |
-| `TestValidate` | every precondition violation |
+| `TestMergeSorted` / `TestReverse` | the two helpers on their own, including the max-to-min order |
 | `TestNoSortFunctionUsed` | the requirement that no sort function is used |
 | `ExampleMerge` | runnable documentation example |
 | `cmd/merge` `TestRun` | CLI parsing, output, and errors |
@@ -132,8 +120,8 @@ Coverage of the `merge` package is 100%.
 
 ```
 merge-collections/
-├── merge.go              # Merge (reverse + mergeTwo)
-├── validate.go           # Validate (input preconditions)
+├── merge.go              # Merge, mergeSorted, reverse
+├── merge_internal_test.go # tests for mergeSorted and reverse
 ├── merge_test.go         # unit tests + benchmark + "no sort" guard
 ├── example_test.go       # runnable example
 ├── cmd/merge/            # CLI
