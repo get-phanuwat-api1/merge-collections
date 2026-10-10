@@ -79,11 +79,9 @@ Every collection is **already sorted**, so nothing needs to be sorted again. The
 
 ```go
 func Merge(collection1, collection2, collection3 []int) []int {
-	minToMax := func(x, y int) bool { return x < y }
-
-	ascending1 := reverse(collection1)                       // 1. max→min becomes min→max
-	merged := mergeSorted(ascending1, collection2, minToMax) // 2. merge two sorted collections
-	return mergeSorted(merged, collection3, minToMax)        // 3. merge in the third one
+	ascending1 := reverse(collection1)             // 1. max→min becomes min→max
+	merged := mergeSorted(ascending1, collection2) // 2. merge two sorted collections
+	return mergeSorted(merged, collection3)        // 3. merge in the third one
 }
 ```
 
@@ -93,7 +91,7 @@ mergeSorted([3, 5, 7, 9], [0, 2, 4, 8])             → [0, 2, 3, 4, 5, 7, 8, 9]
 mergeSorted([0, 2, 3, 4, 5, 7, 8, 9], [1, 6, 10])   → [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 ```
 
-`mergeSorted(left, right, less)` works like merging two sorted piles of cards. It looks at the top card of each pile, takes the one that comes first according to `less`, and repeats. When one pile runs out, the rest of the other pile is already in order. `less` decides the direction: `x < y` for min to max, `x > y` for max to min.
+`mergeSorted(left, right)` works like merging two sorted piles of cards. It looks at the top card of each pile, takes the smaller one, and repeats. When one pile runs out, the rest of the other pile is already in order.
 
 | | |
 |---|---|
@@ -109,7 +107,7 @@ mergeSorted([0, 2, 3, 4, 5, 7, 8, 9], [1, 6, 10])   → [0, 1, 2, 3, 4, 5, 6, 7,
 | `TestMerge` | table-driven cases: interleaved values, empty or nil inputs, a single collection only, duplicates, all-equal values, non-overlapping ranges, different lengths, negatives in collection_1 |
 | `TestMerge_DoesNotModifyInputs` / `ResultDoesNotAliasInputs` | inputs are untouched, and the result is a new slice |
 | `TestMerge_LargeInput` | 300,000 elements |
-| `TestMergeSorted` / `TestReverse` | the two helpers on their own, including the max-to-min order |
+| `TestMergeSorted` / `TestReverse` | the two helpers on their own |
 | `TestNoSortFunctionUsed` | the requirement that no sort function is used |
 | `ExampleMerge` | runnable documentation example |
 | `cmd/merge` `TestRun` | CLI parsing, output, and errors |

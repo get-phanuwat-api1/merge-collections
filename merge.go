@@ -1,5 +1,3 @@
-// Package merge merges three pre-sorted integer collections into one ascending slice
-// without using any sort function.
 package merge
 
 // Merge returns every element of the three collections in ascending order.
@@ -13,23 +11,16 @@ package merge
 // Because every collection is already sorted, nothing needs to be sorted again:
 // flip collection1 to ascending, then merge the sorted collections two at a time.
 func Merge(collection1, collection2, collection3 []int) []int {
-	minToMax := func(x, y int) bool { return x < y }
-
 	ascending1 := reverse(collection1)
-	merged := mergeSorted(ascending1, collection2, minToMax)
-	return mergeSorted(merged, collection3, minToMax)
+	merged := mergeSorted(ascending1, collection2)
+	return mergeSorted(merged, collection3)
 }
 
-// mergeSorted merges two slices that are already sorted by less into one sorted slice.
-// less decides the order: x < y for min to max, x > y for max to min.
-//
-// Compare the first remaining number of each slice, take the one that comes first,
-// and repeat. When one slice runs out, the rest of the other is already in order.
-func mergeSorted(left, right []int, less func(x, y int) bool) []int {
+func mergeSorted(left, right []int) []int {
 	result := make([]int, 0, len(left)+len(right))
 	i, j := 0, 0
 	for i < len(left) && j < len(right) {
-		if less(right[j], left[i]) {
+		if right[j] < left[i] {
 			result = append(result, right[j])
 			j++
 		} else {
