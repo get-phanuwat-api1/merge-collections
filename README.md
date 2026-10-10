@@ -73,7 +73,6 @@ Or with `make`:
 |---|---|
 | `make test` | unit tests with the race detector |
 | `make cover` | tests with coverage |
-| `make fuzz` | fuzz test for 30s (`make fuzz FUZZTIME=2m`) |
 | `make bench` | benchmark |
 | `make run` | runs the example above |
 
@@ -124,7 +123,6 @@ func Merge(collection1, collection2, collection3 []int) []int {
 | `TestMerge_LargeInput` | 300,000 elements |
 | `TestValidate` | every precondition violation |
 | `TestNoSortFunctionUsed` | the requirement that no sort function is used |
-| `FuzzMerge` | random valid inputs: the result is ascending and contains exactly the input elements |
 | `ExampleMerge` | runnable documentation example |
 | `cmd/merge` `TestRun` | CLI parsing, output, and errors |
 
@@ -137,7 +135,6 @@ merge-collections/
 ├── merge.go              # Merge (reverse + mergeTwo)
 ├── validate.go           # Validate (input preconditions)
 ├── merge_test.go         # unit tests + benchmark + "no sort" guard
-├── merge_fuzz_test.go    # fuzz test
 ├── example_test.go       # runnable example
 ├── cmd/merge/            # CLI
 ├── Makefile
